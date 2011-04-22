@@ -22,6 +22,14 @@
 		DFF3399D1361EDB9009C1C21 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DFF3399B1361EDB9009C1C21 /* InfoPlist.strings */; };
 		DFF339A01361EDB9009C1C21 /* MediaPlayerDemoTests.h in Resources */ = {isa = PBXBuildFile; fileRef = DFF3399F1361EDB9009C1C21 /* MediaPlayerDemoTests.h */; };
 		DFF339A21361EDB9009C1C21 /* MediaPlayerDemoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DFF339A11361EDB9009C1C21 /* MediaPlayerDemoTests.m */; };
+		DFF339B41361EF74009C1C21 /* DCMediaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */; };
+		DFF339B71361F08B009C1C21 /* TPCircularBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = DFF339B51361F08B009C1C21 /* TPCircularBuffer.c */; };
+		DFF339B91361F1D8009C1C21 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339B81361F1D8009C1C21 /* CoreMedia.framework */; };
+		DFF339BB1361F1E1009C1C21 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339BA1361F1E1009C1C21 /* AudioToolbox.framework */; };
+		DFF339BD1361F1EB009C1C21 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339BC1361F1EB009C1C21 /* AVFoundation.framework */; };
+		DFF339BF1361F1F5009C1C21 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339BE1361F1F5009C1C21 /* MediaPlayer.framework */; };
+		DFF339C11361F882009C1C21 /* choose-song-button.png in Resources */ = {isa = PBXBuildFile; fileRef = DFF339C01361F882009C1C21 /* choose-song-button.png */; };
+		DFF339C31361FADD009C1C21 /* no-art.png in Resources */ = {isa = PBXBuildFile; fileRef = DFF339C21361FADD009C1C21 /* no-art.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,22 +47,32 @@
 		DFF339721361EDB9009C1C21 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DFF339741361EDB9009C1C21 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		DFF339761361EDB9009C1C21 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		DFF3397A1361EDB9009C1C21 /* MediaPlayerDemo-Info.plist */ = {isa = PBXFileReference; path = "MediaPlayerDemo-Info.plist"; sourceTree = "<group>"; };
+		DFF3397A1361EDB9009C1C21 /* MediaPlayerDemo-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MediaPlayerDemo-Info.plist"; sourceTree = "<group>"; };
 		DFF3397C1361EDB9009C1C21 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		DFF3397E1361EDB9009C1C21 /* MediaPlayerDemo-Prefix.pch */ = {isa = PBXFileReference; path = "MediaPlayerDemo-Prefix.pch"; sourceTree = "<group>"; };
+		DFF3397E1361EDB9009C1C21 /* MediaPlayerDemo-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MediaPlayerDemo-Prefix.pch"; sourceTree = "<group>"; };
 		DFF3397F1361EDB9009C1C21 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		DFF339811361EDB9009C1C21 /* MediaPlayerDemoAppDelegate.h */ = {isa = PBXFileReference; path = MediaPlayerDemoAppDelegate.h; sourceTree = "<group>"; };
+		DFF339811361EDB9009C1C21 /* MediaPlayerDemoAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaPlayerDemoAppDelegate.h; sourceTree = "<group>"; };
 		DFF339821361EDB9009C1C21 /* MediaPlayerDemoAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaPlayerDemoAppDelegate.m; sourceTree = "<group>"; };
 		DFF339851361EDB9009C1C21 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainWindow.xib; sourceTree = "<group>"; };
-		DFF339871361EDB9009C1C21 /* MediaPlayerDemoViewController.h */ = {isa = PBXFileReference; path = MediaPlayerDemoViewController.h; sourceTree = "<group>"; };
+		DFF339871361EDB9009C1C21 /* MediaPlayerDemoViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaPlayerDemoViewController.h; sourceTree = "<group>"; };
 		DFF339881361EDB9009C1C21 /* MediaPlayerDemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaPlayerDemoViewController.m; sourceTree = "<group>"; };
 		DFF3398B1361EDB9009C1C21 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MediaPlayerDemoViewController.xib; sourceTree = "<group>"; };
 		DFF339921361EDB9009C1C21 /* MediaPlayerDemoTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MediaPlayerDemoTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
-		DFF3399A1361EDB9009C1C21 /* MediaPlayerDemoTests-Info.plist */ = {isa = PBXFileReference; path = "MediaPlayerDemoTests-Info.plist"; sourceTree = "<group>"; };
+		DFF3399A1361EDB9009C1C21 /* MediaPlayerDemoTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MediaPlayerDemoTests-Info.plist"; sourceTree = "<group>"; };
 		DFF3399C1361EDB9009C1C21 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		DFF3399E1361EDB9009C1C21 /* MediaPlayerDemoTests-Prefix.pch */ = {isa = PBXFileReference; path = "MediaPlayerDemoTests-Prefix.pch"; sourceTree = "<group>"; };
+		DFF3399E1361EDB9009C1C21 /* MediaPlayerDemoTests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MediaPlayerDemoTests-Prefix.pch"; sourceTree = "<group>"; };
 		DFF3399F1361EDB9009C1C21 /* MediaPlayerDemoTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaPlayerDemoTests.h; sourceTree = "<group>"; };
 		DFF339A11361EDB9009C1C21 /* MediaPlayerDemoTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaPlayerDemoTests.m; sourceTree = "<group>"; };
+		DFF339B21361EF74009C1C21 /* DCMediaPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCMediaPlayer.h; sourceTree = "<group>"; };
+		DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCMediaPlayer.m; sourceTree = "<group>"; };
+		DFF339B51361F08B009C1C21 /* TPCircularBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TPCircularBuffer.c; sourceTree = "<group>"; };
+		DFF339B61361F08B009C1C21 /* TPCircularBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPCircularBuffer.h; sourceTree = "<group>"; };
+		DFF339B81361F1D8009C1C21 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		DFF339BA1361F1E1009C1C21 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		DFF339BC1361F1EB009C1C21 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		DFF339BE1361F1F5009C1C21 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
+		DFF339C01361F882009C1C21 /* choose-song-button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "choose-song-button.png"; sourceTree = "<group>"; };
+		DFF339C21361FADD009C1C21 /* no-art.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "no-art.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +80,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DFF339BF1361F1F5009C1C21 /* MediaPlayer.framework in Frameworks */,
+				DFF339BD1361F1EB009C1C21 /* AVFoundation.framework in Frameworks */,
+				DFF339BB1361F1E1009C1C21 /* AudioToolbox.framework in Frameworks */,
+				DFF339B91361F1D8009C1C21 /* CoreMedia.framework in Frameworks */,
 				DFF339731361EDB9009C1C21 /* UIKit.framework in Frameworks */,
 				DFF339751361EDB9009C1C21 /* Foundation.framework in Frameworks */,
 				DFF339771361EDB9009C1C21 /* CoreGraphics.framework in Frameworks */,
@@ -84,6 +106,8 @@
 		DFF339631361EDB8009C1C21 = {
 			isa = PBXGroup;
 			children = (
+				DFF339C01361F882009C1C21 /* choose-song-button.png */,
+				DFF339C21361FADD009C1C21 /* no-art.png */,
 				DFF339781361EDB9009C1C21 /* MediaPlayerDemo */,
 				DFF339981361EDB9009C1C21 /* MediaPlayerDemoTests */,
 				DFF339711361EDB9009C1C21 /* Frameworks */,
@@ -103,6 +127,10 @@
 		DFF339711361EDB9009C1C21 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DFF339BE1361F1F5009C1C21 /* MediaPlayer.framework */,
+				DFF339BC1361F1EB009C1C21 /* AVFoundation.framework */,
+				DFF339BA1361F1E1009C1C21 /* AudioToolbox.framework */,
+				DFF339B81361F1D8009C1C21 /* CoreMedia.framework */,
 				DFF339721361EDB9009C1C21 /* UIKit.framework */,
 				DFF339741361EDB9009C1C21 /* Foundation.framework */,
 				DFF339761361EDB9009C1C21 /* CoreGraphics.framework */,
@@ -119,6 +147,10 @@
 				DFF339871361EDB9009C1C21 /* MediaPlayerDemoViewController.h */,
 				DFF339881361EDB9009C1C21 /* MediaPlayerDemoViewController.m */,
 				DFF3398A1361EDB9009C1C21 /* MediaPlayerDemoViewController.xib */,
+				DFF339B21361EF74009C1C21 /* DCMediaPlayer.h */,
+				DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */,
+				DFF339B61361F08B009C1C21 /* TPCircularBuffer.h */,
+				DFF339B51361F08B009C1C21 /* TPCircularBuffer.c */,
 				DFF339791361EDB9009C1C21 /* Supporting Files */,
 			);
 			path = MediaPlayerDemo;
@@ -225,6 +257,8 @@
 				DFF3397D1361EDB9009C1C21 /* InfoPlist.strings in Resources */,
 				DFF339861361EDB9009C1C21 /* MainWindow.xib in Resources */,
 				DFF3398C1361EDB9009C1C21 /* MediaPlayerDemoViewController.xib in Resources */,
+				DFF339C11361F882009C1C21 /* choose-song-button.png in Resources */,
+				DFF339C31361FADD009C1C21 /* no-art.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,6 +297,8 @@
 				DFF339801361EDB9009C1C21 /* main.m in Sources */,
 				DFF339831361EDB9009C1C21 /* MediaPlayerDemoAppDelegate.m in Sources */,
 				DFF339891361EDB9009C1C21 /* MediaPlayerDemoViewController.m in Sources */,
+				DFF339B41361EF74009C1C21 /* DCMediaPlayer.m in Sources */,
+				DFF339B71361F08B009C1C21 /* TPCircularBuffer.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,12 +392,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MediaPlayerDemo/MediaPlayerDemo-Prefix.pch";
 				INFOPLIST_FILE = "MediaPlayerDemo/MediaPlayerDemo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -370,11 +408,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MediaPlayerDemo/MediaPlayerDemo-Prefix.pch";
 				INFOPLIST_FILE = "MediaPlayerDemo/MediaPlayerDemo-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				VALIDATE_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;
 			};
