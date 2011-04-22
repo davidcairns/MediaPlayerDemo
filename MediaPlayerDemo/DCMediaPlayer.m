@@ -127,6 +127,12 @@ OSStatus audioInputCallback(void *inRefCon,
 
 #pragma mark -
 - (BOOL)_prepareItemAtURL:(NSURL *)url forKey:(NSString *)itemKey {
+	/*
+	 * This code was appropriated from:
+	 * http://www.subfurther.com/blog/2010/12/13/from-ipod-library-to-pcm-samples-in-far-fewer-steps-than-were-previously-necessary/
+	 * (Thanks, Chris Adamson!)
+	 */
+	
 	// Get the AVAsset for this song.
 	AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
 	if(!asset) {
