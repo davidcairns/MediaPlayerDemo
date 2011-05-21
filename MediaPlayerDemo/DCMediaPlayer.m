@@ -92,18 +92,15 @@ OSStatus audioInputCallback(void *inRefCon,
 
 
 @interface DCMediaPlayer ()
-@property(nonatomic, retain)NSURL *exportedURL;
 - (NSURL *)_urlForExportingKey:(NSString *)itemKey;
 - (void)_setUpAudioUnits;
 - (void)_destroyBuffers;
 - (void)_setUpBuffers;
-- (void)_startProducerTimerOnMainThread;
+- (void)_startProducerTimer;
 @end
 
 @implementation DCMediaPlayer
-@synthesize item = _item;
-@synthesize exportedURL = _exportedURL;
-@synthesize isImporting = _isImporting;
+@synthesize mediaURL = _mediaURL;
 @synthesize isPlaying = _isPlaying;
 
 - (void)dealloc {
@@ -119,153 +116,12 @@ OSStatus audioInputCallback(void *inRefCon,
 	
 	[_musicPlaybackState.audioBufferLock release];
 	
-	[_item release];
-	[_exportedURL release];
+	self.mediaURL = nil;
 	[super dealloc];
 }
 
 
 #pragma mark -
-- (BOOL)_prepareItemAtURL:(NSURL *)url forKey:(NSString *)itemKey {
-	/*
-	 * This code was appropriated from:
-	 * http://www.subfurther.com/blog/2010/12/13/from-ipod-library-to-pcm-samples-in-far-fewer-steps-than-were-previously-necessary/
-	 * (Thanks, Chris Adamson!)
-	 */
-	
-	// Get the AVAsset for this song.
-	AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
-	if(!asset) {
-		NSLog(@"Failed to get asset for url: %@", url);
-		return NO;
-	}
-	
-	// Create an AVAssetReader.
-	NSError *error = nil;
-	AVAssetReader *assetReader = [[AVAssetReader assetReaderWithAsset:asset error:&error] retain];
-	if(!assetReader || error) {
-		NSLog(@"Failed creating asset reader, with error: %@", error);
-		return NO;
-	}
-	
-	// Create an output for our reader.
-	AVAssetReaderOutput *assetReaderOutput = [[AVAssetReaderAudioMixOutput assetReaderAudioMixOutputWithAudioTracks:asset.tracks audioSettings:nil] retain];
-	
-	// Add the output to our asset reader.
-	if(![assetReader canAddOutput:assetReaderOutput]) {
-		NSLog(@"Failure: cannot add output to asset reader.");
-		return NO;
-	}
-	[assetReader addOutput:assetReaderOutput];
-	
-	// Get the URL of the file we're going to export to.
-	[self willChangeValueForKey:@"isImporting"];
-	_isImporting = YES;
-	[self didChangeValueForKey:@"isImporting"];
-	self.exportedURL = [self _urlForExportingKey:itemKey];
-	
-	// Create an asset writer for our export URL.
-	AVAssetWriter *assetWriter = [[AVAssetWriter assetWriterWithURL:self.exportedURL fileType:AVFileTypeCoreAudioFormat error:&error] retain];
-	if(!assetWriter || error) {
-		NSLog(@"Failed to create asset writer for URL: %@, error: %@", self.exportedURL, error);
-		return NO;
-	}
-	
-	// Set up the audio channel layout description for our asset writer.
-	AudioChannelLayout audioChannelLayout;
-	memset(&audioChannelLayout, 0, sizeof(AudioChannelLayout));
-	audioChannelLayout.mChannelLayoutTag = kAudioChannelLayoutTag_Stereo;
-	NSDictionary *outputSettigs = [NSDictionary dictionaryWithObjectsAndKeys:
-								   [NSNumber numberWithInt:kAudioFormatLinearPCM], AVFormatIDKey, 
-								   [NSNumber numberWithFloat:44100.0f], AVSampleRateKey, 
-								   [NSNumber numberWithInt:2], AVNumberOfChannelsKey, 
-								   [NSData dataWithBytes:&audioChannelLayout length:sizeof(audioChannelLayout)], AVChannelLayoutKey, 
-								   [NSNumber numberWithInt:16], AVLinearPCMBitDepthKey, 
-								   [NSNumber numberWithBool:NO], AVLinearPCMIsNonInterleaved, 
-								   [NSNumber numberWithBool:NO], AVLinearPCMIsFloatKey, 
-								   [NSNumber numberWithBool:NO], AVLinearPCMIsBigEndianKey, 
-								   nil];
-	
-	// Set up our asset writer input, to represent the file we're going to be writing into.
-	AVAssetWriterInput *assetWriterInput = [[AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio outputSettings:outputSettigs] retain];
-	assetWriterInput.expectsMediaDataInRealTime = NO;
-	
-	// Add the input to our asset writer.
-	if(![assetWriter canAddInput:assetWriterInput]) {
-		NSLog(@"Failure: cannot add asset writer input.");
-		return NO;
-	}
-	[assetWriter addInput:assetWriterInput];
-	
-	// Start our reader and writer.
-	if(![assetReader startReading]) {
-		NSLog(@"Failed to start reading asset, with error: %@", assetReader.error);
-	}
-	if(![assetWriter startWriting]) {
-		NSLog(@"Failed to start writing asset, with error: %@", assetWriter.error);
-	}
-	
-	// Configure our asset writer's start time.
-	AVAssetTrack *soundTrack = [asset.tracks objectAtIndex:0];
-	[assetWriter startSessionAtSourceTime:CMTimeMake(0, soundTrack.naturalTimeScale)];
-	
-	// Specify what actually happens during the reading / writing session.
-	dispatch_queue_t mediaInputQueue = dispatch_queue_create("mediaInputQueue", NULL);
-	[assetWriterInput requestMediaDataWhenReadyOnQueue:mediaInputQueue usingBlock:^(void) {
-		
-		while(assetWriterInput.readyForMoreMediaData) {
-			// Get the next sample buffer from the asset reader.
-			CMSampleBufferRef bufferRef = [assetReaderOutput copyNextSampleBuffer];
-			
-			// If there's no next buffer, then we're done!
-			if(!bufferRef) {
-				[assetWriterInput markAsFinished];
-				[assetWriter finishWriting];
-				[assetReader cancelReading];
-				
-				// Clean up the objects we'd been holding on to and leave the cycle.
-				[assetReader release];
-				[assetReaderOutput release];
-				[assetWriter release];
-				[assetWriterInput release];
-				
-				NSLog(@"Finished importing!");
-				[self willChangeValueForKey:@"isImporting"];
-				_isImporting = NO;
-				[self didChangeValueForKey:@"isImporting"];
-				
-				// Start our producer timer (weak reference!).
-				[self performSelectorOnMainThread:@selector(_startProducerTimerOnMainThread) withObject:nil waitUntilDone:NO];
-				
-				break;
-			}
-			
-			// Otherwise, append the buffer and keep looping.
-			[assetWriterInput appendSampleBuffer:bufferRef];
-		}
-		
-	}];
-	
-	return YES;
-}
-- (BOOL)prepareMediaItem:(MPMediaItem *)item forKey:(NSString *)itemKey {
-	// Hold on to the reference.
-	[item retain];
-	[_item release];
-	_item = item;
-	
-	// Reset our playback state.
-	[self stop];
-	
-	NSURL *assetURL = [item valueForProperty:MPMediaItemPropertyAssetURL];
-	if(!assetURL) {
-		NSLog(@"Failed to get asset url for item: %@", item);
-		return NO;
-	}
-	return [self _prepareItemAtURL:assetURL forKey:itemKey];
-}
-
-
 - (BOOL)useEffects {
 	return _musicPlaybackState.useEffects;
 }
@@ -310,15 +166,9 @@ OSStatus audioInputCallback(void *inRefCon,
 }
 
 - (void)play {
-	NSLog(@"-[DCMediaPlayer play]");
-	
-	// Make sure we have an item to play, and that it has been exported.
-	if(!_exportedURL) {
-		NSLog(@"DCMediaPlayer: tried to play without a URL to an exported file!");
-		return;
-	}
-	if(_isImporting) {
-		NSLog(@"Not finished importing yet! Give us a moment!");
+	// Make sure we have a URL to play.
+	if(!self.mediaURL) {
+		NSLog(@"DCMediaPlayer: tried to play without a URL!");
 		return;
 	}
 	if(!_isInitialized) {
@@ -329,7 +179,7 @@ OSStatus audioInputCallback(void *inRefCon,
 	_musicPlaybackState.peakDb = 0.0f;
 	_musicPlaybackState.audioFileOffset = 0;
 	
-	[self _startProducerTimerOnMainThread];
+	[self _startProducerTimer];
 	
 	OSStatus startErr = AudioOutputUnitStart(_remoteIOUnit);
 	if(startErr) {
@@ -342,8 +192,6 @@ OSStatus audioInputCallback(void *inRefCon,
 	[self didChangeValueForKey:@"isPlaying"];
 }
 - (void)stop {
-	NSLog(@"-[DCMediaPlayer stop]");
-	
 	if(_isInitialized) {
 		OSStatus err = AudioOutputUnitStop(_remoteIOUnit);
 		if(err) {
@@ -432,7 +280,7 @@ OSStatus audioInputCallback(void *inRefCon,
 	
 	
 	// Get an Audio File representation for the song.
-	setupErr = AudioFileOpenURL((CFURLRef)self.exportedURL, kAudioFileReadPermission, 0, &_musicPlaybackState.audioFile);
+	setupErr = AudioFileOpenURL((CFURLRef)self.mediaURL, kAudioFileReadPermission, 0, &_musicPlaybackState.audioFile);
 	NSAssert(noErr == setupErr, @"Couldn't open audio file");
 	
 	// Read in the entire audio file (NOT recommended). It would be better to use a ring buffer: thread or timer fills, render callback drains.
@@ -531,7 +379,7 @@ OSStatus audioInputCallback(void *inRefCon,
 	
 	[_musicPlaybackState.audioBufferLock unlock];
 }
-- (void)_startProducerTimerOnMainThread {
+- (void)_startProducerTimer {
 	// Make sure all of our buffers are set up!
 	[self _setUpBuffers];
 	

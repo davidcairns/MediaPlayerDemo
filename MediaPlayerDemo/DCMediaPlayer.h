@@ -7,7 +7,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <MediaPlayer/MediaPlayer.h>
 #import <AudioToolbox/AudioToolbox.h>
 #import "TPCircularBuffer.h"
 
@@ -39,9 +38,6 @@ typedef struct {
 
 
 @interface DCMediaPlayer : NSObject {
-	MPMediaItem *_item;
-	NSURL *_exportedURL;
-	BOOL _isImporting;
 	BOOL _isPlaying;
 	
 	BOOL _isInitialized;
@@ -51,10 +47,7 @@ typedef struct {
 	NSTimer *_producerTimer;
 }
 
-- (BOOL)prepareMediaItem:(MPMediaItem *)item forKey:(NSString *)itemKey;
-@property(nonatomic, readonly)MPMediaItem *item;
-
-@property(nonatomic, readonly)BOOL isImporting;
+@property(nonatomic, retain)NSURL *mediaURL;
 @property(nonatomic, assign)BOOL useEffects;
 
 - (void)play;

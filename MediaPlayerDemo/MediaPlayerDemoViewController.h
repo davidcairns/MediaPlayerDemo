@@ -8,10 +8,12 @@
 
 #import <UIKit/UIKit.h>
 #import <MediaPlayer/MediaPlayer.h>
+#import "DCMediaExporter.h"
 
 @class DCMediaPlayer;
 
-@interface MediaPlayerDemoViewController : UIViewController <MPMediaPickerControllerDelegate> {
+@interface MediaPlayerDemoViewController : UIViewController <DCMediaExporterDelegate, MPMediaPickerControllerDelegate> {
+	DCMediaExporter *_mediaExporter;
     DCMediaPlayer *_mediaPlayer;
 	MPMediaPickerController *_mediaPickerController;
 	

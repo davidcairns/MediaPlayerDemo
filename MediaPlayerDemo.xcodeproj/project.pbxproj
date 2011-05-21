@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DF421DA41387182B00D18ADA /* DCMediaExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = DF421DA31387182B00D18ADA /* DCMediaExporter.m */; };
 		DFF339731361EDB9009C1C21 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339721361EDB9009C1C21 /* UIKit.framework */; };
 		DFF339751361EDB9009C1C21 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339741361EDB9009C1C21 /* Foundation.framework */; };
 		DFF339771361EDB9009C1C21 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339761361EDB9009C1C21 /* CoreGraphics.framework */; };
@@ -43,6 +44,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DF421DA21387182A00D18ADA /* DCMediaExporter.h */ = {isa = PBXFileReference; fileEncoding = 4; path = DCMediaExporter.h; sourceTree = "<group>"; };
+		DF421DA31387182B00D18ADA /* DCMediaExporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCMediaExporter.m; sourceTree = "<group>"; };
 		DFF3396E1361EDB8009C1C21 /* MediaPlayerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaPlayerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFF339721361EDB9009C1C21 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DFF339741361EDB9009C1C21 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -149,6 +152,8 @@
 				DFF3398A1361EDB9009C1C21 /* MediaPlayerDemoViewController.xib */,
 				DFF339B21361EF74009C1C21 /* DCMediaPlayer.h */,
 				DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */,
+				DF421DA21387182A00D18ADA /* DCMediaExporter.h */,
+				DF421DA31387182B00D18ADA /* DCMediaExporter.m */,
 				DFF339B61361F08B009C1C21 /* TPCircularBuffer.h */,
 				DFF339B51361F08B009C1C21 /* TPCircularBuffer.c */,
 				DFF339791361EDB9009C1C21 /* Supporting Files */,
@@ -299,6 +304,7 @@
 				DFF339891361EDB9009C1C21 /* MediaPlayerDemoViewController.m in Sources */,
 				DFF339B41361EF74009C1C21 /* DCMediaPlayer.m in Sources */,
 				DFF339B71361F08B009C1C21 /* TPCircularBuffer.c in Sources */,
+				DF421DA41387182B00D18ADA /* DCMediaExporter.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -483,6 +489,7 @@
 				DFF339A71361EDB9009C1C21 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		DFF339A81361EDB9009C1C21 /* Build configuration list for PBXNativeTarget "MediaPlayerDemoTests" */ = {
 			isa = XCConfigurationList;
@@ -491,6 +498,7 @@
 				DFF339AA1361EDB9009C1C21 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
