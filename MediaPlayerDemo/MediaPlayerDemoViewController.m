@@ -8,18 +8,25 @@
 
 #import "MediaPlayerDemoViewController.h"
 #import "DCMediaPlayer.h"
+#import "DCAudioEffectLowPassFilter.h"
+#import "DCAudioEffectMeter.h"
 
 @interface MediaPlayerDemoViewController ()
 @property(nonatomic, retain)DCMediaExporter *mediaExporter;
 @property(nonatomic, retain)DCMediaPlayer *mediaPlayer;
+@property(nonatomic, retain)DCAudioEffectLowPassFilter *lowPassFilterEffect;
+@property(nonatomic, retain)DCAudioEffectMeter *meterEffect;
 @property(nonatomic, retain)MPMediaPickerController *mediaPickerController;
 @property(nonatomic, retain)MPMediaItem *selectedMediaItem;
+@property(nonatomic, retain)UIAlertView *alertView;
 - (void)_updateFields;
 - (NSURL *)_exportURLForMediaItem:(MPMediaItem *)mediaItem;
 @end
 
 @implementation MediaPlayerDemoViewController
 @synthesize mediaPlayer = _mediaPlayer;
+@synthesize lowPassFilterEffect = _lowPassFilterEffect;
+@synthesize meterEffect = _meterEffect;
 @synthesize mediaPickerController = _mediaPickerController;
 @synthesize mediaExporter = _mediaExporter;
 @synthesize selectedMediaItem = _selectedMediaItem;
@@ -30,26 +37,34 @@
 @synthesize albumLabel = _albumLabel;
 @synthesize artistLabel = _artistLabel;
 @synthesize playButton = _playButton;
+@synthesize alertView = _alertView;
 
 - (void)_commonInit {
 	// Set up our media picker controller.
-	_mediaPickerController = [[MPMediaPickerController alloc] initWithMediaTypes:MPMediaTypeAnyAudio];
-	_mediaPickerController.delegate = self;
+	self.mediaPickerController = [[[MPMediaPickerController alloc] initWithMediaTypes:MPMediaTypeAnyAudio] autorelease];
+	self.mediaPickerController.delegate = self;
 	
 	// Set up our media player.
-	_mediaPlayer = [[DCMediaPlayer alloc] init];
+	self.mediaPlayer = [[[DCMediaPlayer alloc] init] autorelease];
+	
+	// Set up our low-pass filter effect and add it to our media player.
+	self.lowPassFilterEffect = [[[DCAudioEffectLowPassFilter alloc] init] autorelease];
+	[self.mediaPlayer addPostProcessingEffect:self.lowPassFilterEffect];
+	
+	// Set up our metering effect.
+	self.meterEffect = [[[DCAudioEffectMeter alloc] init] autorelease];
 	
 	// Observe changes in the media player's activity.
-	[_mediaPlayer addObserver:self forKeyPath:@"isPlaying" options:NSKeyValueObservingOptionNew context:NULL];
+	[self.mediaPlayer addObserver:self forKeyPath:@"isPlaying" options:NSKeyValueObservingOptionNew context:NULL];
 }
 - (id)init {
-	if([super init]) {
+	if((self = [super init])) {
 		[self _commonInit];
 	}
 	return self;
 }
 - (id)initWithCoder:(NSCoder *)aDecoder {
-	if([super initWithCoder:aDecoder]) {
+	if((self = [super initWithCoder:aDecoder])) {
 		[self _commonInit];
 	}
 	return self;
@@ -58,17 +73,19 @@
 	self.mediaExporter.delegate = nil;
 	self.mediaExporter = nil;
 	self.mediaPlayer = nil;
-	_mediaPickerController.delegate = nil;
+	self.lowPassFilterEffect = nil;
+	self.meterEffect = nil;
+	self.mediaPickerController.delegate = nil;
+	self.mediaPickerController = nil;
 	self.selectedMediaItem = nil;
-	[_mediaPickerController release];
-	[_effectsSwitch release];
-	[_spinner release];
-	[_albumArtButton release];
-	[_songLabel release];
-	[_albumLabel release];
-	[_artistLabel release];
-	[_playButton release];
-	[_alertView release];
+	self.effectsSwitch = nil;
+	self.spinner = nil;
+	self.albumArtButton = nil;
+	self.songLabel = nil;
+	self.albumLabel = nil;
+	self.artistLabel = nil;
+	self.playButton = nil;
+	self.alertView = nil;
 	[super dealloc];
 }
 
@@ -130,9 +147,8 @@
 	}
 	else {
 		// If something went wrong, tell the user to select a different song.
-		[_alertView release];
-		_alertView = [[UIAlertView alloc] initWithTitle:@"Oh no!" message:@"Sorry, we can't copy that track. Please select another." delegate:self cancelButtonTitle:@"D'oh!" otherButtonTitles:nil];
-		[_alertView show];
+		self.alertView = [[[UIAlertView alloc] initWithTitle:@"Oh no!" message:@"Sorry, we can't copy that track. Please select another." delegate:self cancelButtonTitle:@"D'oh!" otherButtonTitles:nil] autorelease];
+		[self.alertView show];
 	}
 	
 	// Change our song selection button's background image.
@@ -149,8 +165,7 @@
 #pragma mark -
 #pragma mark UIAlertViewDelegate
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-	[_alertView release];
-	_alertView = nil;
+	self.alertView = nil;
 }
 
 
@@ -160,7 +175,7 @@
 	[self presentModalViewController:self.mediaPickerController animated:YES];
 }
 - (IBAction)effectsSwitchToggled:(id)sender {
-	self.mediaPlayer.useEffects = self.effectsSwitch.on;
+	self.lowPassFilterEffect.enabled = self.effectsSwitch.on;
 }
 
 - (IBAction)playStopButtonTapped:(id)sender {
@@ -216,6 +231,7 @@
 }
 
 - (void)setMediaExporter:(DCMediaExporter *)mediaExporter {
+	// We have to remember to make sure we're not still the delegate of an old media exporter object.
 	[mediaExporter retain];
 	_mediaExporter.delegate = nil;
 	[_mediaExporter release];

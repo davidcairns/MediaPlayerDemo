@@ -10,22 +10,8 @@
 #import <MediaPlayer/MediaPlayer.h>
 #import "DCMediaExporter.h"
 
-@class DCMediaPlayer;
-
 @interface MediaPlayerDemoViewController : UIViewController <DCMediaExporterDelegate, MPMediaPickerControllerDelegate> {
-	DCMediaExporter *_mediaExporter;
-    DCMediaPlayer *_mediaPlayer;
-	MPMediaPickerController *_mediaPickerController;
 	
-	UISwitch *_effectsSwitch;
-	UILabel *_songLabel;
-	UILabel *_albumLabel;
-	UILabel *_artistLabel;
-	UIActivityIndicatorView *_spinner;
-	UIButton *_albumArtButton;
-	UIButton *_playButton;
-	
-	UIAlertView *_alertView;
 }
 
 @property(nonatomic, retain)IBOutlet UISwitch *effectsSwitch;

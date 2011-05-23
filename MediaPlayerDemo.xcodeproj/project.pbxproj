@@ -10,6 +10,9 @@
 		DF421DA41387182B00D18ADA /* DCMediaExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = DF421DA31387182B00D18ADA /* DCMediaExporter.m */; };
 		DFCFFD4F1389F94000000840 /* DCFileProducer.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD4E1389F94000000840 /* DCFileProducer.m */; };
 		DFCFFD56138A051300000840 /* DCRingBufferRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD55138A051300000840 /* DCRingBufferRecord.m */; };
+		DFCFFD59138A1C1800000840 /* DCAudioEffect.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD58138A1C1800000840 /* DCAudioEffect.m */; };
+		DFCFFD5E138A1EF200000840 /* DCAudioEffectLowPassFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD5D138A1EF200000840 /* DCAudioEffectLowPassFilter.m */; };
+		DFCFFD61138A23FD00000840 /* DCAudioEffectMeter.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD60138A23FD00000840 /* DCAudioEffectMeter.m */; };
 		DFF339731361EDB9009C1C21 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339721361EDB9009C1C21 /* UIKit.framework */; };
 		DFF339751361EDB9009C1C21 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339741361EDB9009C1C21 /* Foundation.framework */; };
 		DFF339771361EDB9009C1C21 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339761361EDB9009C1C21 /* CoreGraphics.framework */; };
@@ -51,6 +54,12 @@
 		DFCFFD4E1389F94000000840 /* DCFileProducer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCFileProducer.m; sourceTree = "<group>"; };
 		DFCFFD54138A051300000840 /* DCRingBufferRecord.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCRingBufferRecord.h; sourceTree = "<group>"; };
 		DFCFFD55138A051300000840 /* DCRingBufferRecord.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCRingBufferRecord.m; sourceTree = "<group>"; };
+		DFCFFD57138A1C1800000840 /* DCAudioEffect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCAudioEffect.h; sourceTree = "<group>"; };
+		DFCFFD58138A1C1800000840 /* DCAudioEffect.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCAudioEffect.m; sourceTree = "<group>"; };
+		DFCFFD5C138A1EF200000840 /* DCAudioEffectLowPassFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCAudioEffectLowPassFilter.h; sourceTree = "<group>"; };
+		DFCFFD5D138A1EF200000840 /* DCAudioEffectLowPassFilter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCAudioEffectLowPassFilter.m; sourceTree = "<group>"; };
+		DFCFFD5F138A23FD00000840 /* DCAudioEffectMeter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCAudioEffectMeter.h; sourceTree = "<group>"; };
+		DFCFFD60138A23FD00000840 /* DCAudioEffectMeter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCAudioEffectMeter.m; sourceTree = "<group>"; };
 		DFF3396E1361EDB8009C1C21 /* MediaPlayerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaPlayerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFF339721361EDB9009C1C21 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DFF339741361EDB9009C1C21 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -109,6 +118,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		DFCFFD5A138A1C2300000840 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				DFCFFD54138A051300000840 /* DCRingBufferRecord.h */,
+				DFCFFD55138A051300000840 /* DCRingBufferRecord.m */,
+			);
+			name = Utilities;
+			sourceTree = "<group>";
+		};
+		DFCFFD5B138A1C3000000840 /* Effects */ = {
+			isa = PBXGroup;
+			children = (
+				DFCFFD57138A1C1800000840 /* DCAudioEffect.h */,
+				DFCFFD58138A1C1800000840 /* DCAudioEffect.m */,
+				DFCFFD5C138A1EF200000840 /* DCAudioEffectLowPassFilter.h */,
+				DFCFFD5D138A1EF200000840 /* DCAudioEffectLowPassFilter.m */,
+				DFCFFD5F138A23FD00000840 /* DCAudioEffectMeter.h */,
+				DFCFFD60138A23FD00000840 /* DCAudioEffectMeter.m */,
+			);
+			name = Effects;
+			sourceTree = "<group>";
+		};
 		DFF339631361EDB8009C1C21 = {
 			isa = PBXGroup;
 			children = (
@@ -159,8 +190,8 @@
 				DFCFFD4E1389F94000000840 /* DCFileProducer.m */,
 				DF421DA21387182A00D18ADA /* DCMediaExporter.h */,
 				DF421DA31387182B00D18ADA /* DCMediaExporter.m */,
-				DFCFFD54138A051300000840 /* DCRingBufferRecord.h */,
-				DFCFFD55138A051300000840 /* DCRingBufferRecord.m */,
+				DFCFFD5B138A1C3000000840 /* Effects */,
+				DFCFFD5A138A1C2300000840 /* Utilities */,
 				DFF339791361EDB9009C1C21 /* Supporting Files */,
 			);
 			path = MediaPlayerDemo;
@@ -311,6 +342,9 @@
 				DF421DA41387182B00D18ADA /* DCMediaExporter.m in Sources */,
 				DFCFFD4F1389F94000000840 /* DCFileProducer.m in Sources */,
 				DFCFFD56138A051300000840 /* DCRingBufferRecord.m in Sources */,
+				DFCFFD59138A1C1800000840 /* DCAudioEffect.m in Sources */,
+				DFCFFD5E138A1EF200000840 /* DCAudioEffectLowPassFilter.m in Sources */,
+				DFCFFD61138A23FD00000840 /* DCAudioEffectMeter.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

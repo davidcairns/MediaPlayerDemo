@@ -8,6 +8,7 @@
 
 #import "DCMediaPlayer.h"
 #import <AVFoundation/AVFoundation.h>
+#import "DCFileProducer.h"
 
 #pragma mark -
 #pragma mark Audio-Processing Callbacks
@@ -30,36 +31,28 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 - (NSURL *)_urlForExportingKey:(NSString *)itemKey;
 - (void)_setUpAudioUnits;
 @property(nonatomic, retain)DCFileProducer *fileProducer;
+@property(nonatomic, retain)NSMutableArray *postProcessingEffects;
+@property(nonatomic, assign)BOOL isPlaying;
 @end
 
 @implementation DCMediaPlayer
 @synthesize mediaURL = _mediaURL;
 @synthesize isPlaying = _isPlaying;
-@synthesize useEffects = _useEffects;
-@synthesize meteringEnabled = _meteringEnabled;
 @synthesize fileProducer = _fileProducer;
+@synthesize postProcessingEffects = _postProcessingEffects;
 
+- (id)init {
+	if((self = [super init])) {
+		self.postProcessingEffects = [NSMutableArray array];
+	}
+	return self;
+}
 - (void)dealloc {
 	self.mediaURL = nil;
+	self.fileProducer = nil;
+	self.postProcessingEffects = nil;
 	
 	[super dealloc];
-}
-
-
-#pragma mark -
-- (BOOL)isPlaying {
-	return _isPlaying;
-}
-
-- (CGFloat)meterLevel {
-#if ENABLE_POST_PROCESSING
-	if(!self.isPlaying) {
-		return 0.0f;
-	}
-	return _peakDb;
-#else
-	return 0.0f;
-#endif
 }
 
 
@@ -90,20 +83,13 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 		[self _setUpAudioUnits];
 	}
 	
-	// Reset our play state.
-#if ENABLE_POST_PROCESSING
-	_peakDb = 0.0f;
-#endif
-	
 	OSStatus startErr = AudioOutputUnitStart(_remoteIOUnit);
 	if(startErr) {
 		NSLog(@"Couldn't start RIO unit, error: %ld", startErr);
 		return;
 	}
 	
-	[self willChangeValueForKey:@"isPlaying"];
-	_isPlaying = YES;
-	[self didChangeValueForKey:@"isPlaying"];
+	self.isPlaying = YES;
 }
 - (void)stop {
 	if(_isInitialized) {
@@ -117,10 +103,7 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 		}
 	}
 	_isInitialized = NO;
-	
-	[self willChangeValueForKey:@"isPlaying"];
-	_isPlaying = NO;
-	[self didChangeValueForKey:@"isPlaying"];
+	self.isPlaying = NO;
 }
 
 
@@ -221,52 +204,15 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 
 
 #pragma mark -
-#if ENABLE_POST_PROCESSING
 - (void)_postProcessSamplesInBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples {
-	// Do post-processing on the samples in this buffer.
-	for(SInt16 sampleIndex = 0; sampleIndex < samplesAvailable; sampleIndex++) {
-		AudioSampleType sample = buffer[sampleIndex];
-		
-		if(_useEffects) {
-			// Do our low-pass filtering.
-			// Convert from SInt16 [-32768, 32767] to float [-1, 1].
-			float fSample = ((float)sample / (float)(32767));
-			
-			// 2-pole, cutoff: 10KHz
-			// NOTE: This code was taken from the filter generator at http://www-users.cs.york.ac.uk/~fisher/mkfilter/
-			_xv[0] = _xv[1]; _xv[1] = _xv[2];
-			_xv[2] = fSample / 3.978041310e+00;
-			_yv[0] = _yv[1]; _yv[1] = _yv[2];
-			_yv[2] = (_xv[0] + _xv[2]) + 2.0f * _xv[1] + (-0.1767613657 * _yv[0]) + (0.1712413904 * _yv[1]);
-			
-			// Convert back from float [-1, 1] to SInt16 [-32768, 32767].
-			buffer[sampleIndex] = _yv[2] * (float)32767;
-		}
-		
-		if(_meteringEnabled) {
-			// Rectify the sample (make it positive).
-			Float32 rectifiedSample = fabsf(sample);
-			
-			// Low-pass filter the recitified amplitude signal.
-			const float kLowPassTimeDelay = 0.001f;
-			Float32 filteredSampleValue = kLowPassTimeDelay * rectifiedSample + (1.0f - kLowPassTimeDelay) * _previousRectifiedSampleValue;
-			_previousRectifiedSampleValue = rectifiedSample;
-			
-			// Convert from amplitude to decibels.
-			Float32 db = 20.0f * log10f(filteredSampleValue);
-			
-			// See if this is a new max value.
-			_peakDb = MAX(_peakDb, db);
+	// Pass this sample to each of our post-processors.
+	for(DCAudioEffect *effect in self.postProcessingEffects) {
+		if(effect.enabled) {
+			[effect processSamplesInBuffer:buffer numSamples:numSamples];
 		}
 	}
 }
-#endif
 - (NSInteger)_renderAudioIntoBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples {
-	// Reset our peak reading.
-#if ENABLE_POST_PROCESSING
-	_peakDb = 0.0f;
-#endif
-	
 	// Call our renderer.
 	NSInteger numSamplesRendered = [_fileProducer renderAudioIntoBuffer:buffer numSamples:numSamples];
 	
@@ -274,6 +220,27 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 	[self _postProcessSamplesInBuffer:buffer numSamples:numSamplesRendered];
 	
 	return numSamplesRendered;
+}
+
+
+#pragma mark -
+#pragma Effects
+- (void)addPostProcessingEffect:(DCAudioEffect *)effect {
+	// Add the effect to our array.
+	[self.postProcessingEffects addObject:effect];
+	
+	// Make sure all the non-destructive effects are first!
+	[self.postProcessingEffects sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+		DCAudioEffect *e1 = (DCAudioEffect *)obj1;
+		DCAudioEffect *e2 = (DCAudioEffect *)obj2;
+		if(e1.destructive == e2.destructive) {
+			return NSOrderedSame;
+		}
+		else if(e1.destructive) {
+			return NSOrderedDescending;
+		}
+		return NSOrderedAscending;
+	}];
 }
 
 @end
