@@ -9,6 +9,10 @@
 #import "DCMediaPlayer.h"
 #import <AVFoundation/AVFoundation.h>
 
+#define kRingBufferLength (1 << 20) // 1M
+#define kScratchBufferLength (64 << 10) // 64K
+
+
 #pragma mark -
 #pragma mark Audio-Processing Callbacks
 OSStatus audioInputCallback(void *inRefCon, 
@@ -103,18 +107,29 @@ OSStatus audioInputCallback(void *inRefCon,
 @synthesize mediaURL = _mediaURL;
 @synthesize isPlaying = _isPlaying;
 
+- (id)init {
+	if((self = [super init])) {
+		// Create our playback state structure.
+		_musicPlaybackState = (DCMusicPlaybackState *)malloc(sizeof(DCMusicPlaybackState));
+		memset(_musicPlaybackState, 0, sizeof(DCMusicPlaybackState));
+	}
+	return self;
+}
 - (void)dealloc {
 	[_producerTimer invalidate];
 	
 	// Deallocate other state.
-	if(_musicPlaybackState.audioDataBuffer) {
-		free(_musicPlaybackState.audioDataBuffer);
+	if(_musicPlaybackState) {
+		if(_musicPlaybackState->audioDataBuffer) {
+			free(_musicPlaybackState->audioDataBuffer);
+		}
+		if(_musicPlaybackState->scratchBuffer) {
+			free(_musicPlaybackState->scratchBuffer);
+		}
+		
+		[_musicPlaybackState->audioBufferLock release];
+		free(_musicPlaybackState);
 	}
-	if(_musicPlaybackState.scratchBuffer) {
-		free(_musicPlaybackState.scratchBuffer);
-	}
-	
-	[_musicPlaybackState.audioBufferLock release];
 	
 	self.mediaURL = nil;
 	[super dealloc];
@@ -123,10 +138,10 @@ OSStatus audioInputCallback(void *inRefCon,
 
 #pragma mark -
 - (BOOL)useEffects {
-	return _musicPlaybackState.useEffects;
+	return _musicPlaybackState->useEffects;
 }
 - (void)setUseEffects:(BOOL)useEffects {
-	_musicPlaybackState.useEffects = useEffects;
+	_musicPlaybackState->useEffects = useEffects;
 }
 
 - (BOOL)isPlaying {
@@ -134,17 +149,17 @@ OSStatus audioInputCallback(void *inRefCon,
 }
 
 - (BOOL)meteringEnabled {
-	return _musicPlaybackState.meteringEnabled;
+	return _musicPlaybackState->meteringEnabled;
 }
 - (void)setMeteringEnabled:(BOOL)meteringEnabled {
-	_musicPlaybackState.meteringEnabled = meteringEnabled;
+	_musicPlaybackState->meteringEnabled = meteringEnabled;
 }
 
 - (CGFloat)meterLevel {
 	if(!self.isPlaying) {
 		return 0.0f;
 	}
-	return _musicPlaybackState.peakDb;
+	return _musicPlaybackState->peakDb;
 }
 
 
@@ -176,8 +191,8 @@ OSStatus audioInputCallback(void *inRefCon,
 	}
 	
 	// Reset our play state.
-	_musicPlaybackState.peakDb = 0.0f;
-	_musicPlaybackState.audioFileOffset = 0;
+	_musicPlaybackState->peakDb = 0.0f;
+	_musicPlaybackState->audioFileOffset = 0;
 	
 	[self _startProducerTimer];
 	
@@ -280,21 +295,21 @@ OSStatus audioInputCallback(void *inRefCon,
 	
 	
 	// Get an Audio File representation for the song.
-	setupErr = AudioFileOpenURL((CFURLRef)self.mediaURL, kAudioFileReadPermission, 0, &_musicPlaybackState.audioFile);
+	setupErr = AudioFileOpenURL((CFURLRef)self.mediaURL, kAudioFileReadPermission, 0, &_musicPlaybackState->audioFile);
 	NSAssert(noErr == setupErr, @"Couldn't open audio file");
 	
 	// Read in the entire audio file (NOT recommended). It would be better to use a ring buffer: thread or timer fills, render callback drains.
-	UInt32 audioDataByteCountSize = sizeof(_musicPlaybackState.audioFileSize);
-	setupErr = AudioFileGetProperty(_musicPlaybackState.audioFile, kAudioFilePropertyAudioDataByteCount, &audioDataByteCountSize, &_musicPlaybackState.audioFileSize);
+	UInt32 audioDataByteCountSize = sizeof(_musicPlaybackState->audioFileSize);
+	setupErr = AudioFileGetProperty(_musicPlaybackState->audioFile, kAudioFilePropertyAudioDataByteCount, &audioDataByteCountSize, &_musicPlaybackState->audioFileSize);
 	NSAssert(noErr == setupErr, @"Couldn't get size property");
 	
 	// Get the audio file's stream description.
 	AudioStreamBasicDescription audioFileStreamDescription;
 	UInt32 audioStreamDescriptionSize = sizeof(audioFileStreamDescription);
-	setupErr = AudioFileGetProperty(_musicPlaybackState.audioFile, kAudioFilePropertyDataFormat, &audioStreamDescriptionSize, &audioFileStreamDescription);
+	setupErr = AudioFileGetProperty(_musicPlaybackState->audioFile, kAudioFilePropertyDataFormat, &audioStreamDescriptionSize, &audioFileStreamDescription);
 	NSAssert(noErr == setupErr, @"Couldn't get file asbd");
 	
-	_musicPlaybackState.audioStreamDescription = audioFileStreamDescription;
+	_musicPlaybackState->audioStreamDescription = audioFileStreamDescription;
 	
 	// Clean up our music playback state structure if it's already been in use.
 	[self _destroyBuffers];
@@ -315,7 +330,7 @@ OSStatus audioInputCallback(void *inRefCon,
 	// Connect our RIO unit's input bus 0 to our music player callback.
 	AURenderCallbackStruct musicPlayerCallbackStruct;
 	musicPlayerCallbackStruct.inputProc = audioInputCallback;
-	musicPlayerCallbackStruct.inputProcRefCon = &_musicPlaybackState;
+	musicPlayerCallbackStruct.inputProcRefCon = _musicPlaybackState;
 	setupErr = AudioUnitSetProperty(_remoteIOUnit, 
 									kAudioUnitProperty_SetRenderCallback, 
 									kAudioUnitScope_Global, 
@@ -333,51 +348,51 @@ OSStatus audioInputCallback(void *inRefCon,
 #pragma mark -
 #pragma mark Producer logic
 - (void)_destroyBuffers {
-	[_musicPlaybackState.audioBufferLock lock];
+	[_musicPlaybackState->audioBufferLock lock];
 	
-	if(_musicPlaybackState.audioDataBuffer) {
-		free(_musicPlaybackState.audioDataBuffer);
-		_musicPlaybackState.audioDataBuffer = NULL;
+	if(_musicPlaybackState->audioDataBuffer) {
+		free(_musicPlaybackState->audioDataBuffer);
+		_musicPlaybackState->audioDataBuffer = NULL;
 	}
-	if(_musicPlaybackState.scratchBuffer) {
-		free(_musicPlaybackState.scratchBuffer);
-		_musicPlaybackState.scratchBuffer = NULL;
+	if(_musicPlaybackState->scratchBuffer) {
+		free(_musicPlaybackState->scratchBuffer);
+		_musicPlaybackState->scratchBuffer = NULL;
 	}
-	if(_musicPlaybackState.ringBufferRecord) {
-		TPCircularBufferClear(_musicPlaybackState.ringBufferRecord);
-		free(_musicPlaybackState.ringBufferRecord);
-		_musicPlaybackState.ringBufferRecord = NULL;
+	if(_musicPlaybackState->ringBufferRecord) {
+		TPCircularBufferClear(_musicPlaybackState->ringBufferRecord);
+		free(_musicPlaybackState->ringBufferRecord);
+		_musicPlaybackState->ringBufferRecord = NULL;
 	}
 	
-	[_musicPlaybackState.audioBufferLock unlock];
+	[_musicPlaybackState->audioBufferLock unlock];
 }
 - (void)_setUpBuffers {
-	if(!_musicPlaybackState.audioBufferLock) {
-		_musicPlaybackState.audioBufferLock = [[NSLock alloc] init];
+	if(!_musicPlaybackState->audioBufferLock) {
+		_musicPlaybackState->audioBufferLock = [[NSLock alloc] init];
 	}
 	
-	[_musicPlaybackState.audioBufferLock lock];
+	[_musicPlaybackState->audioBufferLock lock];
 	
 	// Set up our music playback state structure (including our ring buffer).
-	if(!_musicPlaybackState.audioDataBuffer) {
-		_musicPlaybackState.audioDataBuffer = (AudioSampleType *)malloc(kRingBufferLength * sizeof(SInt16));
-		memset(_musicPlaybackState.audioDataBuffer, 0, kRingBufferLength * sizeof(SInt16));
+	if(!_musicPlaybackState->audioDataBuffer) {
+		_musicPlaybackState->audioDataBuffer = (AudioSampleType *)malloc(kRingBufferLength * sizeof(SInt16));
+		memset(_musicPlaybackState->audioDataBuffer, 0, kRingBufferLength * sizeof(SInt16));
 	}
 	
-	if(!_musicPlaybackState.scratchBuffer) {
-		_musicPlaybackState.scratchBuffer = (AudioSampleType *)malloc(kScratchBufferLength * sizeof(SInt16));
-		memset(_musicPlaybackState.scratchBuffer, 0, kScratchBufferLength * sizeof(SInt16));
+	if(!_musicPlaybackState->scratchBuffer) {
+		_musicPlaybackState->scratchBuffer = (AudioSampleType *)malloc(kScratchBufferLength * sizeof(SInt16));
+		memset(_musicPlaybackState->scratchBuffer, 0, kScratchBufferLength * sizeof(SInt16));
 	}
 	
-	if(!_musicPlaybackState.ringBufferRecord) {
-		_musicPlaybackState.ringBufferRecord = (TPCircularBufferRecord *)malloc(sizeof(TPCircularBufferRecord));
-		TPCircularBufferInit(_musicPlaybackState.ringBufferRecord, kRingBufferLength);
+	if(!_musicPlaybackState->ringBufferRecord) {
+		_musicPlaybackState->ringBufferRecord = (TPCircularBufferRecord *)malloc(sizeof(TPCircularBufferRecord));
+		TPCircularBufferInit(_musicPlaybackState->ringBufferRecord, kRingBufferLength);
 	}
 	
-	memset(_musicPlaybackState.xv, 0, sizeof(_musicPlaybackState.xv));
-	memset(_musicPlaybackState.yv, 0, sizeof(_musicPlaybackState.yv));
+	memset(_musicPlaybackState->xv, 0, sizeof(_musicPlaybackState->xv));
+	memset(_musicPlaybackState->yv, 0, sizeof(_musicPlaybackState->yv));
 	
-	[_musicPlaybackState.audioBufferLock unlock];
+	[_musicPlaybackState->audioBufferLock unlock];
 }
 - (void)_startProducerTimer {
 	// Make sure all of our buffers are set up!
@@ -388,17 +403,17 @@ OSStatus audioInputCallback(void *inRefCon,
 }
 - (void)_producerTimerFired:(NSTimer *)timer {
 	// Make sure we're not going to overflow our ring buffer.
-	int numEntriesOpenForWriting = TPCircularBufferSpace(_musicPlaybackState.ringBufferRecord);
+	int numEntriesOpenForWriting = TPCircularBufferSpace(_musicPlaybackState->ringBufferRecord);
 	
 	// Make sure the file has been set up.
-	if(!_musicPlaybackState.audioFile) {
+	if(!_musicPlaybackState->audioFile) {
 		return;
 	}
 	
 	// Read data from the audio file into our temporary (scratch) buffer.
 	UInt32 numItemsToRead = MIN(kScratchBufferLength, numEntriesOpenForWriting);
-	UInt32 bytesRead = MIN(numItemsToRead * sizeof(SInt16), _musicPlaybackState.audioFileSize - _musicPlaybackState.audioFileOffset);
-	OSStatus err = AudioFileReadBytes(_musicPlaybackState.audioFile, false, _musicPlaybackState.audioFileOffset, &bytesRead, _musicPlaybackState.scratchBuffer);
+	UInt32 bytesRead = MIN(numItemsToRead * sizeof(SInt16), _musicPlaybackState->audioFileSize - _musicPlaybackState->audioFileOffset);
+	OSStatus err = AudioFileReadBytes(_musicPlaybackState->audioFile, false, _musicPlaybackState->audioFileOffset, &bytesRead, _musicPlaybackState->scratchBuffer);
 	if(err) {
 		NSLog(@"WARNING: Failed to read from file, err: %ld", err);
 		[self stop];
@@ -406,23 +421,23 @@ OSStatus audioInputCallback(void *inRefCon,
 	}
 	
 	// Advance our read offset.
-	_musicPlaybackState.audioFileOffset += bytesRead;
+	_musicPlaybackState->audioFileOffset += bytesRead;
 	
 	// Check to see if we should loop (continuing playing from the beginning of the file).
-	if(_musicPlaybackState.audioFileOffset >= _musicPlaybackState.audioFileSize) {
-		_musicPlaybackState.audioFileOffset = 0;
+	if(_musicPlaybackState->audioFileOffset >= _musicPlaybackState->audioFileSize) {
+		_musicPlaybackState->audioFileOffset = 0;
 	}
 	
 	// Actually copy the data into the ring buffer.
-	[_musicPlaybackState.audioBufferLock lock];
+	[_musicPlaybackState->audioBufferLock lock];
 	
 	// Make sure our buffers still exist.
-	if(_musicPlaybackState.ringBufferRecord && _musicPlaybackState.audioDataBuffer && _musicPlaybackState.scratchBuffer) {
+	if(_musicPlaybackState->ringBufferRecord && _musicPlaybackState->audioDataBuffer && _musicPlaybackState->scratchBuffer) {
 		int samplesRead = bytesRead / sizeof(SInt16);
-		TPCircularBufferCopy(_musicPlaybackState.ringBufferRecord, _musicPlaybackState.audioDataBuffer, _musicPlaybackState.scratchBuffer, samplesRead, sizeof(SInt16));
+		TPCircularBufferCopy(_musicPlaybackState->ringBufferRecord, _musicPlaybackState->audioDataBuffer, _musicPlaybackState->scratchBuffer, samplesRead, sizeof(SInt16));
 	}
 	
-	[_musicPlaybackState.audioBufferLock unlock];
+	[_musicPlaybackState->audioBufferLock unlock];
 }
 
 @end

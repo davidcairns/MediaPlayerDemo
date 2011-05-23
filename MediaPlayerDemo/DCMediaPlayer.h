@@ -10,9 +10,6 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import "TPCircularBuffer.h"
 
-#define kRingBufferLength (1 << 20) // 1M
-#define kScratchBufferLength (64 << 10) // 64K
-
 typedef struct {
 	BOOL initializedRingBuffer;
 	TPCircularBufferRecord *ringBufferRecord;
@@ -42,7 +39,7 @@ typedef struct {
 	
 	BOOL _isInitialized;
 	AudioUnit _remoteIOUnit;
-	DCMusicPlaybackState _musicPlaybackState;
+	DCMusicPlaybackState *_musicPlaybackState;
 	
 	NSTimer *_producerTimer;
 }
