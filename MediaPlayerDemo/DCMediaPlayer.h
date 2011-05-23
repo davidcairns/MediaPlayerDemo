@@ -10,36 +10,33 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import "TPCircularBuffer.h"
 
-typedef struct {
-	BOOL initializedRingBuffer;
-	TPCircularBufferRecord *ringBufferRecord;
-	AudioSampleType *audioDataBuffer;
-	AudioSampleType *scratchBuffer;
-	UInt64 audioFileSize;
-	SInt64 audioFileOffset;
-	AudioFileID audioFile;
-	NSLock *audioBufferLock;
-	
-	AudioStreamBasicDescription audioStreamDescription;
-	
-	// Low-pass filter.
-	BOOL useEffects;
-	float xv[3];
-	float yv[3];
-	
-	// Amplitude measuring.
-	BOOL meteringEnabled;
-	float previousRectifiedSampleValue;
-	float peakDb;
-} DCMusicPlaybackState;
-
-
 @interface DCMediaPlayer : NSObject {
 	BOOL _isPlaying;
 	
 	BOOL _isInitialized;
 	AudioUnit _remoteIOUnit;
-	DCMusicPlaybackState *_musicPlaybackState;
+	
+	// Playback state.
+	BOOL _initializedRingBuffer;
+	TPCircularBufferRecord *_ringBufferRecord;
+	AudioSampleType *_audioDataBuffer;
+	AudioSampleType *_scratchBuffer;
+	UInt64 _audioFileSize;
+	SInt64 _audioFileOffset;
+	AudioFileID _audioFile;
+	NSLock *_audioBufferLock;
+	
+	AudioStreamBasicDescription _audioStreamDescription;
+	
+	// Low-pass filter.
+	BOOL _useEffects;
+	float _xv[3];
+	float _yv[3];
+	
+	// Amplitude measuring.
+	BOOL _meteringEnabled;
+	float _previousRectifiedSampleValue;
+	float _peakDb;
 	
 	NSTimer *_producerTimer;
 }
