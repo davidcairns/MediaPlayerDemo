@@ -6,9 +6,11 @@
 //  Copyright 2011 David Cairns. All rights reserved.
 //
 
+#define ENABLE_POST_PROCESSING 1
+
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioToolbox.h>
-#import "TPCircularBuffer.h"
+#import "DCFileProducer.h"
 
 @interface DCMediaPlayer : NSObject {
 	BOOL _isPlaying;
@@ -17,17 +19,11 @@
 	AudioUnit _remoteIOUnit;
 	
 	// Playback state.
-	BOOL _initializedRingBuffer;
-	TPCircularBufferRecord *_ringBufferRecord;
-	AudioSampleType *_audioDataBuffer;
-	AudioSampleType *_scratchBuffer;
-	UInt64 _audioFileSize;
-	SInt64 _audioFileOffset;
-	AudioFileID _audioFile;
-	NSLock *_audioBufferLock;
+	DCFileProducer *_fileProducer;
 	
 	AudioStreamBasicDescription _audioStreamDescription;
 	
+#if ENABLE_POST_PROCESSING
 	// Low-pass filter.
 	BOOL _useEffects;
 	float _xv[3];
@@ -37,8 +33,7 @@
 	BOOL _meteringEnabled;
 	float _previousRectifiedSampleValue;
 	float _peakDb;
-	
-	NSTimer *_producerTimer;
+#endif
 }
 
 @property(nonatomic, retain)NSURL *mediaURL;

@@ -9,34 +9,27 @@
 #import "DCMediaPlayer.h"
 #import <AVFoundation/AVFoundation.h>
 
-#define kRingBufferLength (1 << 20) // 1M
-#define kScratchBufferLength (64 << 10) // 64K
-
-
 #pragma mark -
-@interface DCMediaPlayer(Rendering)
-- (OSStatus)_renderAudioIntoBufferList:(AudioBufferList *)bufferList timestamp:(const AudioTimeStamp *)timestamp bus:(UInt32)bus numFrames:(UInt32)numFrames flags:(AudioUnitRenderActionFlags *)flags;
-@end
 #pragma mark Audio-Processing Callbacks
-OSStatus audioInputCallback(void *inRefCon, 
-							AudioUnitRenderActionFlags *ioActionFlags, 
-							const AudioTimeStamp *inTimeStamp, 
-							UInt32 inBusNumber, 
-							UInt32 inNumberFrames, 
-							AudioBufferList *ioData) {
-	
+@interface DCMediaPlayer(Rendering)
+- (NSInteger)_renderAudioIntoBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples;
+@end
+OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags, const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList *ioData) {
 	DCMediaPlayer *mediaPlayer = (DCMediaPlayer *)inRefCon;
-	return [mediaPlayer _renderAudioIntoBufferList:ioData timestamp:inTimeStamp bus:inBusNumber numFrames:inNumberFrames flags:ioActionFlags];
+	SInt16 *audioBuffer = (SInt16 *)ioData->mBuffers[0].mData;
+	NSInteger numSamples = ioData->mBuffers[0].mDataByteSize / sizeof(SInt16);
+	NSInteger renderedSamples = [mediaPlayer _renderAudioIntoBuffer:audioBuffer numSamples:numSamples];
+	if(renderedSamples > numSamples) {
+		NSLog(@"WARNING: DCMediaPlayer rendered too many samples! (%i < %i)", renderedSamples, numSamples);
+	}
+	return noErr;
 }
-
 
 
 @interface DCMediaPlayer ()
 - (NSURL *)_urlForExportingKey:(NSString *)itemKey;
 - (void)_setUpAudioUnits;
-- (void)_destroyBuffers;
-- (void)_setUpBuffers;
-- (void)_startProducerTimer;
+@property(nonatomic, retain)DCFileProducer *fileProducer;
 @end
 
 @implementation DCMediaPlayer
@@ -44,19 +37,10 @@ OSStatus audioInputCallback(void *inRefCon,
 @synthesize isPlaying = _isPlaying;
 @synthesize useEffects = _useEffects;
 @synthesize meteringEnabled = _meteringEnabled;
+@synthesize fileProducer = _fileProducer;
 
 - (void)dealloc {
-	[_producerTimer invalidate];
 	self.mediaURL = nil;
-	
-	// Deallocate other state.
-	if(_audioDataBuffer) {
-		free(_audioDataBuffer);
-	}
-	if(_scratchBuffer) {
-		free(_scratchBuffer);
-	}
-	[_audioBufferLock release];
 	
 	[super dealloc];
 }
@@ -68,10 +52,14 @@ OSStatus audioInputCallback(void *inRefCon,
 }
 
 - (CGFloat)meterLevel {
+#if ENABLE_POST_PROCESSING
 	if(!self.isPlaying) {
 		return 0.0f;
 	}
 	return _peakDb;
+#else
+	return 0.0f;
+#endif
 }
 
 
@@ -103,10 +91,9 @@ OSStatus audioInputCallback(void *inRefCon,
 	}
 	
 	// Reset our play state.
+#if ENABLE_POST_PROCESSING
 	_peakDb = 0.0f;
-	_audioFileOffset = 0;
-	
-	[self _startProducerTimer];
+#endif
 	
 	OSStatus startErr = AudioOutputUnitStart(_remoteIOUnit);
 	if(startErr) {
@@ -128,14 +115,6 @@ OSStatus audioInputCallback(void *inRefCon,
 		if(err) {
 			NSLog(@"Failed to uninitialize audio unit. Just keep going? (err: %ld", err);
 		}
-		
-		NSLog(@"Killing producer timer!");
-		// Stop our producer timer.
-		[_producerTimer invalidate];
-		_producerTimer = nil;
-		
-		// Deallocate our buffers.
-		[self _destroyBuffers];
 	}
 	_isInitialized = NO;
 	
@@ -205,35 +184,10 @@ OSStatus audioInputCallback(void *inRefCon,
 									sizeof(lcpmStreamDescription));
 	NSAssert(noErr == setupErr, @"Couldn't set ASBD for RIO on output scope / bus 1");
 	
-	
-	// Get an Audio File representation for the song.
-	setupErr = AudioFileOpenURL((CFURLRef)self.mediaURL, kAudioFileReadPermission, 0, &_audioFile);
-	NSAssert(noErr == setupErr, @"Couldn't open audio file");
-	
-	// Read in the entire audio file (NOT recommended). It would be better to use a ring buffer: thread or timer fills, render callback drains.
-	UInt32 audioDataByteCountSize = sizeof(_audioFileSize);
-	setupErr = AudioFileGetProperty(_audioFile, kAudioFilePropertyAudioDataByteCount, &audioDataByteCountSize, &_audioFileSize);
-	NSAssert(noErr == setupErr, @"Couldn't get size property");
-	
-	// Get the audio file's stream description.
-	UInt32 audioStreamDescriptionSize = sizeof(_audioStreamDescription);
-	setupErr = AudioFileGetProperty(_audioFile, kAudioFilePropertyDataFormat, &audioStreamDescriptionSize, &_audioStreamDescription);
-	NSAssert(noErr == setupErr, @"Couldn't get file asbd");
-	
-	// Clean up our music playback state structure if it's already been in use.
-	[self _destroyBuffers];
-	
-	// Make sure our buffers are set up!
-	[self _setUpBuffers];
-	
 	// Set the stream description for our RIO unit's bus 0 input.
-	setupErr = AudioUnitSetProperty(_remoteIOUnit, 
-									kAudioUnitProperty_StreamFormat, 
-									kAudioUnitScope_Input, 
-									0, 
-									&_audioStreamDescription, 
-									sizeof(_audioStreamDescription));
-	NSAssert(noErr == setupErr, @"Couldn't set ASBD for remote IO unit on input scope / bus 0");
+	AudioStreamBasicDescription fileStreamDescription = [_fileProducer audioStreamDescription];
+	setupErr = AudioUnitSetProperty(_remoteIOUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &fileStreamDescription, sizeof(fileStreamDescription));
+	NSAssert1(noErr == setupErr, @"Couldn't set ASBD for remote IO unit on input scope / bus 0; error: %i", setupErr);
 	
 	
 	// Connect our RIO unit's input bus 0 to our music player callback.
@@ -256,169 +210,70 @@ OSStatus audioInputCallback(void *inRefCon,
 
 #pragma mark -
 #pragma mark Producer logic
-- (void)_destroyBuffers {
-	[_audioBufferLock lock];
+- (void)setMediaURL:(NSURL *)mediaURL {
+	[mediaURL retain];
+	[_mediaURL release];
+	_mediaURL = mediaURL;
 	
-	if(_audioDataBuffer) {
-		free(_audioDataBuffer);
-		_audioDataBuffer = NULL;
-	}
-	if(_scratchBuffer) {
-		free(_scratchBuffer);
-		_scratchBuffer = NULL;
-	}
-	if(_ringBufferRecord) {
-		TPCircularBufferClear(_ringBufferRecord);
-		free(_ringBufferRecord);
-		_ringBufferRecord = NULL;
-	}
-	
-	[_audioBufferLock unlock];
-}
-- (void)_setUpBuffers {
-	if(!_audioBufferLock) {
-		_audioBufferLock = [[NSLock alloc] init];
-	}
-	
-	[_audioBufferLock lock];
-	
-	if(!_audioDataBuffer) {
-		_audioDataBuffer = (AudioSampleType *)malloc(kRingBufferLength * sizeof(SInt16));
-		memset(_audioDataBuffer, 0, kRingBufferLength * sizeof(SInt16));
-	}
-	
-	if(!_scratchBuffer) {
-		_scratchBuffer = (AudioSampleType *)malloc(kScratchBufferLength * sizeof(SInt16));
-		memset(_scratchBuffer, 0, kScratchBufferLength * sizeof(SInt16));
-	}
-	
-	if(!_ringBufferRecord) {
-		_ringBufferRecord = (TPCircularBufferRecord *)malloc(sizeof(TPCircularBufferRecord));
-		TPCircularBufferInit(_ringBufferRecord, kRingBufferLength);
-	}
-	
-	memset(_xv, 0, sizeof(_xv));
-	memset(_yv, 0, sizeof(_yv));
-	
-	[_audioBufferLock unlock];
-}
-- (void)_startProducerTimer {
-	// Make sure all of our buffers are set up!
-	[self _setUpBuffers];
-	
-	[_producerTimer invalidate];
-	_producerTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(_producerTimerFired:) userInfo:nil repeats:YES];
-}
-- (void)_producerTimerFired:(NSTimer *)timer {
-	// Make sure we're not going to overflow our ring buffer.
-	int numEntriesOpenForWriting = TPCircularBufferSpace(_ringBufferRecord);
-	
-	// Make sure the file has been set up.
-	if(!_audioFile) {
-		return;
-	}
-	
-	// Read data from the audio file into our temporary (scratch) buffer.
-	UInt32 numItemsToRead = MIN(kScratchBufferLength, numEntriesOpenForWriting);
-	UInt32 bytesRead = MIN(numItemsToRead * sizeof(SInt16), _audioFileSize - _audioFileOffset);
-	OSStatus err = AudioFileReadBytes(_audioFile, false, _audioFileOffset, &bytesRead, _scratchBuffer);
-	if(err) {
-		NSLog(@"WARNING: Failed to read from file, err: %ld", err);
-		[self stop];
-		return;
-	}
-	
-	// Advance our read offset.
-	_audioFileOffset += bytesRead;
-	
-	// Check to see if we should loop (continuing playing from the beginning of the file).
-	if(_audioFileOffset >= _audioFileSize) {
-		_audioFileOffset = 0;
-	}
-	
-	// Actually copy the data into the ring buffer.
-	[_audioBufferLock lock];
-	
-	// Make sure our buffers still exist.
-	if(_ringBufferRecord && _audioDataBuffer && _scratchBuffer) {
-		int samplesRead = bytesRead / sizeof(SInt16);
-		TPCircularBufferCopy(_ringBufferRecord, _audioDataBuffer, _scratchBuffer, samplesRead, sizeof(SInt16));
-	}
-	
-	[_audioBufferLock unlock];
+	// Re-create our file producer.
+	self.fileProducer = [[[DCFileProducer alloc] initWithMediaURL:mediaURL] autorelease];
 }
 
 
 #pragma mark -
-- (OSStatus)_renderAudioIntoBufferList:(AudioBufferList *)bufferList timestamp:(const AudioTimeStamp *)timestamp bus:(UInt32)bus numFrames:(UInt32)numFrames flags:(AudioUnitRenderActionFlags *)flags {
-	int samplesToCopy = bufferList->mBuffers[0].mDataByteSize / sizeof(SInt16);
-	SInt16 *targetBuffer = (SInt16 *)bufferList->mBuffers[0].mData;
-	
-	// Reset our peak reading.
-	_peakDb = 0.0f;
-	
-	[_audioBufferLock lock];
-	
-	while(samplesToCopy > 0) {
-		// Determine how many samples we can read.
-		int sampleCount = MIN(samplesToCopy, TPCircularBufferFillCountContiguous(_ringBufferRecord));
-		if(0 == sampleCount) {
-			break;
+#if ENABLE_POST_PROCESSING
+- (void)_postProcessSamplesInBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples {
+	// Do post-processing on the samples in this buffer.
+	for(SInt16 sampleIndex = 0; sampleIndex < samplesAvailable; sampleIndex++) {
+		AudioSampleType sample = buffer[sampleIndex];
+		
+		if(_useEffects) {
+			// Do our low-pass filtering.
+			// Convert from SInt16 [-32768, 32767] to float [-1, 1].
+			float fSample = ((float)sample / (float)(32767));
+			
+			// 2-pole, cutoff: 10KHz
+			// NOTE: This code was taken from the filter generator at http://www-users.cs.york.ac.uk/~fisher/mkfilter/
+			_xv[0] = _xv[1]; _xv[1] = _xv[2];
+			_xv[2] = fSample / 3.978041310e+00;
+			_yv[0] = _yv[1]; _yv[1] = _yv[2];
+			_yv[2] = (_xv[0] + _xv[2]) + 2.0f * _xv[1] + (-0.1767613657 * _yv[0]) + (0.1712413904 * _yv[1]);
+			
+			// Convert back from float [-1, 1] to SInt16 [-32768, 32767].
+			buffer[sampleIndex] = _yv[2] * (float)32767;
 		}
 		
-		// Get the pointer to read from.
-		SInt16 *sourceBuffer = _audioDataBuffer + _ringBufferRecord->tail;
-		
-		// Process the samples in this buffer.
-		for(SInt16 sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
-			AudioSampleType sample = sourceBuffer[sampleIndex];
+		if(_meteringEnabled) {
+			// Rectify the sample (make it positive).
+			Float32 rectifiedSample = fabsf(sample);
 			
-			if(_useEffects) {
-				// Do our low-pass filtering.
-				// Convert from SInt16 [-32768, 32767] to float [-1, 1].
-				float fSample = ((float)sample / (float)(32767));
-				
-				// 2-pole, cutoff: 10KHz
-				// NOTE: This code was taken from the filter generator at http://www-users.cs.york.ac.uk/~fisher/mkfilter/
-				_xv[0] = _xv[1]; _xv[1] = _xv[2];
-				_xv[2] = fSample / 3.978041310e+00;
-				_yv[0] = _yv[1]; _yv[1] = _yv[2];
-				_yv[2] = (_xv[0] + _xv[2]) + 2.0f * _xv[1]
-				+ (-0.1767613657 * _yv[0]) + (0.1712413904 * _yv[1]);
-				
-				// Convert back from float [-1, 1] to SInt16 [-32768, 32767].
-				sourceBuffer[sampleIndex] = _yv[2] * (float)32767;
-			}
+			// Low-pass filter the recitified amplitude signal.
+			const float kLowPassTimeDelay = 0.001f;
+			Float32 filteredSampleValue = kLowPassTimeDelay * rectifiedSample + (1.0f - kLowPassTimeDelay) * _previousRectifiedSampleValue;
+			_previousRectifiedSampleValue = rectifiedSample;
 			
-			if(_meteringEnabled) {
-				// Rectify the sample (make it positive).
-				Float32 rectifiedSample = fabsf(sample);
-				
-				// Low-pass filter the recitified amplitude signal.
-				const float kLowPassTimeDelay = 0.001f;
-				Float32 filteredSampleValue = kLowPassTimeDelay * rectifiedSample + (1.0f - kLowPassTimeDelay) * _previousRectifiedSampleValue;
-				_previousRectifiedSampleValue = rectifiedSample;
-				
-				// Convert from amplitude to decibels.
-				Float32 db = 20.0f * log10f(filteredSampleValue);
-				
-				// See if this is a new max value.
-				_peakDb = MAX(_peakDb, db);
-			}
+			// Convert from amplitude to decibels.
+			Float32 db = 20.0f * log10f(filteredSampleValue);
+			
+			// See if this is a new max value.
+			_peakDb = MAX(_peakDb, db);
 		}
-		
-		// Do the actual copy.
-		memcpy(targetBuffer, sourceBuffer, sampleCount * sizeof(SInt16));
-		
-		// Advance our pointers.
-		targetBuffer += sampleCount;
-		samplesToCopy -= sampleCount;
-		TPCircularBufferConsume(_ringBufferRecord, sampleCount);
 	}
+}
+#endif
+- (NSInteger)_renderAudioIntoBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples {
+	// Reset our peak reading.
+#if ENABLE_POST_PROCESSING
+	_peakDb = 0.0f;
+#endif
 	
-	[_audioBufferLock unlock];
+	// Call our renderer.
+	NSInteger numSamplesRendered = [_fileProducer renderAudioIntoBuffer:buffer numSamples:numSamples];
 	
-	return noErr;
+	// Do any post-processing.
+	[self _postProcessSamplesInBuffer:buffer numSamples:numSamplesRendered];
+	
+	return numSamplesRendered;
 }
 
 @end

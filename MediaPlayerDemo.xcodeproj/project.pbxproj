@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		DF421DA41387182B00D18ADA /* DCMediaExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = DF421DA31387182B00D18ADA /* DCMediaExporter.m */; };
+		DFCFFD4F1389F94000000840 /* DCFileProducer.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD4E1389F94000000840 /* DCFileProducer.m */; };
+		DFCFFD56138A051300000840 /* DCRingBufferRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD55138A051300000840 /* DCRingBufferRecord.m */; };
 		DFF339731361EDB9009C1C21 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339721361EDB9009C1C21 /* UIKit.framework */; };
 		DFF339751361EDB9009C1C21 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339741361EDB9009C1C21 /* Foundation.framework */; };
 		DFF339771361EDB9009C1C21 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339761361EDB9009C1C21 /* CoreGraphics.framework */; };
@@ -24,7 +26,6 @@
 		DFF339A01361EDB9009C1C21 /* MediaPlayerDemoTests.h in Resources */ = {isa = PBXBuildFile; fileRef = DFF3399F1361EDB9009C1C21 /* MediaPlayerDemoTests.h */; };
 		DFF339A21361EDB9009C1C21 /* MediaPlayerDemoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DFF339A11361EDB9009C1C21 /* MediaPlayerDemoTests.m */; };
 		DFF339B41361EF74009C1C21 /* DCMediaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */; };
-		DFF339B71361F08B009C1C21 /* TPCircularBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = DFF339B51361F08B009C1C21 /* TPCircularBuffer.c */; };
 		DFF339B91361F1D8009C1C21 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339B81361F1D8009C1C21 /* CoreMedia.framework */; };
 		DFF339BB1361F1E1009C1C21 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339BA1361F1E1009C1C21 /* AudioToolbox.framework */; };
 		DFF339BD1361F1EB009C1C21 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DFF339BC1361F1EB009C1C21 /* AVFoundation.framework */; };
@@ -44,8 +45,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		DF421DA21387182A00D18ADA /* DCMediaExporter.h */ = {isa = PBXFileReference; fileEncoding = 4; path = DCMediaExporter.h; sourceTree = "<group>"; };
+		DF421DA21387182A00D18ADA /* DCMediaExporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCMediaExporter.h; sourceTree = "<group>"; };
 		DF421DA31387182B00D18ADA /* DCMediaExporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCMediaExporter.m; sourceTree = "<group>"; };
+		DFCFFD4D1389F94000000840 /* DCFileProducer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCFileProducer.h; sourceTree = "<group>"; };
+		DFCFFD4E1389F94000000840 /* DCFileProducer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCFileProducer.m; sourceTree = "<group>"; };
+		DFCFFD54138A051300000840 /* DCRingBufferRecord.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCRingBufferRecord.h; sourceTree = "<group>"; };
+		DFCFFD55138A051300000840 /* DCRingBufferRecord.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCRingBufferRecord.m; sourceTree = "<group>"; };
 		DFF3396E1361EDB8009C1C21 /* MediaPlayerDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaPlayerDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFF339721361EDB9009C1C21 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DFF339741361EDB9009C1C21 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -68,8 +73,6 @@
 		DFF339A11361EDB9009C1C21 /* MediaPlayerDemoTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaPlayerDemoTests.m; sourceTree = "<group>"; };
 		DFF339B21361EF74009C1C21 /* DCMediaPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCMediaPlayer.h; sourceTree = "<group>"; };
 		DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCMediaPlayer.m; sourceTree = "<group>"; };
-		DFF339B51361F08B009C1C21 /* TPCircularBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TPCircularBuffer.c; sourceTree = "<group>"; };
-		DFF339B61361F08B009C1C21 /* TPCircularBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPCircularBuffer.h; sourceTree = "<group>"; };
 		DFF339B81361F1D8009C1C21 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		DFF339BA1361F1E1009C1C21 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		DFF339BC1361F1EB009C1C21 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -152,10 +155,12 @@
 				DFF3398A1361EDB9009C1C21 /* MediaPlayerDemoViewController.xib */,
 				DFF339B21361EF74009C1C21 /* DCMediaPlayer.h */,
 				DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */,
+				DFCFFD4D1389F94000000840 /* DCFileProducer.h */,
+				DFCFFD4E1389F94000000840 /* DCFileProducer.m */,
 				DF421DA21387182A00D18ADA /* DCMediaExporter.h */,
 				DF421DA31387182B00D18ADA /* DCMediaExporter.m */,
-				DFF339B61361F08B009C1C21 /* TPCircularBuffer.h */,
-				DFF339B51361F08B009C1C21 /* TPCircularBuffer.c */,
+				DFCFFD54138A051300000840 /* DCRingBufferRecord.h */,
+				DFCFFD55138A051300000840 /* DCRingBufferRecord.m */,
 				DFF339791361EDB9009C1C21 /* Supporting Files */,
 			);
 			path = MediaPlayerDemo;
@@ -303,8 +308,9 @@
 				DFF339831361EDB9009C1C21 /* MediaPlayerDemoAppDelegate.m in Sources */,
 				DFF339891361EDB9009C1C21 /* MediaPlayerDemoViewController.m in Sources */,
 				DFF339B41361EF74009C1C21 /* DCMediaPlayer.m in Sources */,
-				DFF339B71361F08B009C1C21 /* TPCircularBuffer.c in Sources */,
 				DF421DA41387182B00D18ADA /* DCMediaExporter.m in Sources */,
+				DFCFFD4F1389F94000000840 /* DCFileProducer.m in Sources */,
+				DFCFFD56138A051300000840 /* DCRingBufferRecord.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
