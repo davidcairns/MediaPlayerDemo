@@ -1,0 +1,16 @@
+# xcode noise
+build
+build/*
+*.pbxuser
+*.mode1v3
+*.perspectivev3
+*.xcuserdatad
+*.xcworkspace
+
+# old skool
+.svn
+
+# osx noise
+.DS_Store
+profile
+dff_vimdeos.json
