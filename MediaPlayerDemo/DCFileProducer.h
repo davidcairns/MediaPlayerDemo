@@ -20,9 +20,6 @@
 
 - (id)initWithMediaURL:(NSURL *)mediaURL;
 
-// Begins production (if needed).
-- (void)prepare;
-
 - (NSInteger)renderAudioIntoBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples;
 
 - (AudioStreamBasicDescription)audioStreamDescription;

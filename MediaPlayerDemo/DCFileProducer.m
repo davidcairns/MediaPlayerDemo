@@ -75,10 +75,6 @@
 }
 
 #pragma mark -
-- (void)prepare {
-	
-}
-
 - (NSInteger)renderAudioIntoBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples {
 	__block SInt16 *bufferPointer = buffer;
 	__block NSInteger samplesRemaining = numSamples;
@@ -122,7 +118,6 @@
 				OSStatus err = AudioFileReadBytes(_audioFile, false, self.audioFileOffset, &bytesRead, _scratchBuffer);
 				if(err) {
 					NSLog(@"ERROR: Failed to read from file, err: %ld", err);
-//					[self stop];
 					return;
 				}
 				
