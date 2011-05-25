@@ -8,7 +8,6 @@
 
 #import "DCMediaPlayer.h"
 #import <AVFoundation/AVFoundation.h>
-#import "DCFileProducer.h"
 
 #pragma mark -
 #pragma mark Audio-Processing Callbacks
@@ -30,15 +29,16 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 @interface DCMediaPlayer ()
 - (NSURL *)_urlForExportingKey:(NSString *)itemKey;
 - (void)_setUpAudioUnits;
-@property(nonatomic, retain)DCFileProducer *fileProducer;
+
 @property(nonatomic, retain)NSMutableArray *postProcessingEffects;
 @property(nonatomic, assign)BOOL isPlaying;
+@property(nonatomic, assign)BOOL isInitialized;
 @end
 
 @implementation DCMediaPlayer
-@synthesize mediaURL = _mediaURL;
+@synthesize audioProducer = _audioProducer;
 @synthesize isPlaying = _isPlaying;
-@synthesize fileProducer = _fileProducer;
+@synthesize isInitialized = _isInitialized;
 @synthesize postProcessingEffects = _postProcessingEffects;
 
 - (id)init {
@@ -48,8 +48,7 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 	return self;
 }
 - (void)dealloc {
-	self.mediaURL = nil;
-	self.fileProducer = nil;
+	self.audioProducer = nil;
 	self.postProcessingEffects = nil;
 	
 	[super dealloc];
@@ -75,11 +74,10 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 
 - (void)play {
 	// Make sure we have a URL to play.
-	if(!self.mediaURL) {
-		NSLog(@"DCMediaPlayer: tried to play without a URL!");
-		return;
+	if(!self.audioProducer) {
+		NSLog(@"DCMediaPlayer: tried to play without a producer");
 	}
-	if(!_isInitialized) {
+	if(!self.isInitialized) {
 		[self _setUpAudioUnits];
 	}
 	
@@ -92,7 +90,7 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 	self.isPlaying = YES;
 }
 - (void)stop {
-	if(_isInitialized) {
+	if(self.isInitialized) {
 		OSStatus err = AudioOutputUnitStop(_remoteIOUnit);
 		if(err) {
 			NSLog(@"Failed to stop audio unit. Just keep going? (err: %ld", err);
@@ -102,7 +100,7 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 			NSLog(@"Failed to uninitialize audio unit. Just keep going? (err: %ld", err);
 		}
 	}
-	_isInitialized = NO;
+	self.isInitialized = NO;
 	self.isPlaying = NO;
 }
 
@@ -168,7 +166,7 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 	NSAssert(noErr == setupErr, @"Couldn't set ASBD for RIO on output scope / bus 1");
 	
 	// Set the stream description for our RIO unit's bus 0 input.
-	AudioStreamBasicDescription fileStreamDescription = [_fileProducer audioStreamDescription];
+	AudioStreamBasicDescription fileStreamDescription = [self.audioProducer audioStreamDescription];
 	setupErr = AudioUnitSetProperty(_remoteIOUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &fileStreamDescription, sizeof(fileStreamDescription));
 	NSAssert1(noErr == setupErr, @"Couldn't set ASBD for remote IO unit on input scope / bus 0; error: %i", setupErr);
 	
@@ -188,20 +186,8 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 	setupErr = AudioUnitInitialize(_remoteIOUnit);
 	NSAssert(setupErr == noErr, @"Couldn't initialize RIO unit");
 	
-	_isInitialized = YES;
+	self.isInitialized = YES;
 }
-
-#pragma mark -
-#pragma mark Producer logic
-- (void)setMediaURL:(NSURL *)mediaURL {
-	[mediaURL retain];
-	[_mediaURL release];
-	_mediaURL = mediaURL;
-	
-	// Re-create our file producer.
-	self.fileProducer = [[[DCFileProducer alloc] initWithMediaURL:mediaURL] autorelease];
-}
-
 
 #pragma mark -
 - (void)_postProcessSamplesInBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples {
@@ -214,7 +200,7 @@ OSStatus audioInputCallback(void *inRefCon, AudioUnitRenderActionFlags *ioAction
 }
 - (NSInteger)_renderAudioIntoBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples {
 	// Call our renderer.
-	NSInteger numSamplesRendered = [_fileProducer renderAudioIntoBuffer:buffer numSamples:numSamples];
+	NSInteger numSamplesRendered = [self.audioProducer renderAudioIntoBuffer:buffer numSamples:numSamples];
 	
 	// Do any post-processing.
 	[self _postProcessSamplesInBuffer:buffer numSamples:numSamplesRendered];

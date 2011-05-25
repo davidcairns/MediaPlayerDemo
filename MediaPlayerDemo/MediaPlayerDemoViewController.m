@@ -10,9 +10,11 @@
 #import "DCMediaPlayer.h"
 #import "DCAudioEffectLowPassFilter.h"
 #import "DCAudioEffectMeter.h"
+#import "DCFileProducer.h"
 
 @interface MediaPlayerDemoViewController ()
 @property(nonatomic, retain)DCMediaExporter *mediaExporter;
+@property(nonatomic, retain)DCAudioProducer *audioProducer;
 @property(nonatomic, retain)DCMediaPlayer *mediaPlayer;
 @property(nonatomic, retain)DCAudioEffectLowPassFilter *lowPassFilterEffect;
 @property(nonatomic, retain)DCAudioEffectMeter *meterEffect;
@@ -25,6 +27,7 @@
 
 @implementation MediaPlayerDemoViewController
 @synthesize mediaPlayer = _mediaPlayer;
+@synthesize audioProducer = _audioProducer;
 @synthesize lowPassFilterEffect = _lowPassFilterEffect;
 @synthesize meterEffect = _meterEffect;
 @synthesize mediaPickerController = _mediaPickerController;
@@ -73,6 +76,7 @@
 	self.mediaExporter.delegate = nil;
 	self.mediaExporter = nil;
 	self.mediaPlayer = nil;
+	self.audioProducer = nil;
 	self.lowPassFilterEffect = nil;
 	self.meterEffect = nil;
 	self.mediaPickerController.delegate = nil;
@@ -120,8 +124,11 @@
 #pragma mark -
 #pragma DCMediaExporterDelegate
 - (void)exporterCompleted:(DCMediaExporter *)exporter {
-	// Pass the exported URL to our player.
-	self.mediaPlayer.mediaURL = exporter.exportURL;
+	// Create a file producer for the file.
+	self.audioProducer = [[[DCFileProducer alloc] initWithMediaURL:exporter.exportURL] autorelease];
+	
+	// Pass the file producer to our media player.
+	self.mediaPlayer.audioProducer = self.audioProducer;
 	
 	[[UIApplication sharedApplication] endIgnoringInteractionEvents];
 	[self.spinner stopAnimating];

@@ -18,7 +18,6 @@
 @property(nonatomic, readonly)dispatch_queue_t audioBufferAccessQueue;
 @property(nonatomic, retain)DCRingBufferRecord *ringBufferRecord;
 
-@property(nonatomic, assign)AudioStreamBasicDescription audioStreamDescription;
 @property(nonatomic, assign)UInt64 audioFileSize;
 @property(nonatomic, assign)SInt64 audioFileOffset;
 @end
@@ -27,7 +26,6 @@
 @synthesize mediaURL = _mediaURL;
 @synthesize audioBufferAccessQueue = _audioBufferAccessQueue;
 @synthesize ringBufferRecord = _ringBufferRecord;
-@synthesize audioStreamDescription = _audioStreamDescription;
 @synthesize audioFileSize = _audioFileSize;
 @synthesize audioFileOffset = _audioFileOffset;
 
@@ -57,9 +55,11 @@
 		NSAssert(noErr == err, @"Couldn't get size property");
 		
 		// Get the audio file's stream description.
-		UInt32 audioStreamDescriptionSize = sizeof(_audioStreamDescription);
-		err = AudioFileGetProperty(_audioFile, kAudioFilePropertyDataFormat, &audioStreamDescriptionSize, &_audioStreamDescription);
+		AudioStreamBasicDescription streamDescription;
+		UInt32 audioStreamDescriptionSize = sizeof(streamDescription);
+		err = AudioFileGetProperty(_audioFile, kAudioFilePropertyDataFormat, &audioStreamDescriptionSize, &streamDescription);
 		NSAssert1(noErr == err, @"ERROR: Couldn't get file's Audio Stream Basic Description; error: ", err);
+		self.audioStreamDescription = streamDescription;
 	}
 	return self;
 }

@@ -7,22 +7,16 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <AudioToolbox/AudioToolbox.h>
+#import "DCAudioProducer.h"
 
-@interface DCFileProducer : NSObject {
+@interface DCFileProducer : DCAudioProducer {
 	AudioSampleType *_audioDataBuffer;
 	AudioSampleType *_scratchBuffer;
 	
 	AudioFileID _audioFile;
-	
-	NSTimer *_producerTimer;
 }
 
 - (id)initWithMediaURL:(NSURL *)mediaURL;
-
-- (NSInteger)renderAudioIntoBuffer:(SInt16 *)buffer numSamples:(NSInteger)numSamples;
-
-- (AudioStreamBasicDescription)audioStreamDescription;
 - (NSURL *)mediaURL;
 
 @end

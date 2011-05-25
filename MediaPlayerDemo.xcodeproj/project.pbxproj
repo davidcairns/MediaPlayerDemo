@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DF10EFB9138CC3000052F226 /* DCAudioProducer.m in Sources */ = {isa = PBXBuildFile; fileRef = DF10EFB8138CC3000052F226 /* DCAudioProducer.m */; };
 		DF421DA41387182B00D18ADA /* DCMediaExporter.m in Sources */ = {isa = PBXBuildFile; fileRef = DF421DA31387182B00D18ADA /* DCMediaExporter.m */; };
 		DFCFFD4F1389F94000000840 /* DCFileProducer.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD4E1389F94000000840 /* DCFileProducer.m */; };
 		DFCFFD56138A051300000840 /* DCRingBufferRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = DFCFFD55138A051300000840 /* DCRingBufferRecord.m */; };
@@ -48,6 +49,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DF10EFB7138CC3000052F226 /* DCAudioProducer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCAudioProducer.h; sourceTree = "<group>"; };
+		DF10EFB8138CC3000052F226 /* DCAudioProducer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCAudioProducer.m; sourceTree = "<group>"; };
 		DF421DA21387182A00D18ADA /* DCMediaExporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCMediaExporter.h; sourceTree = "<group>"; };
 		DF421DA31387182B00D18ADA /* DCMediaExporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCMediaExporter.m; sourceTree = "<group>"; };
 		DFCFFD4D1389F94000000840 /* DCFileProducer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCFileProducer.h; sourceTree = "<group>"; };
@@ -186,6 +189,8 @@
 				DFF3398A1361EDB9009C1C21 /* MediaPlayerDemoViewController.xib */,
 				DFF339B21361EF74009C1C21 /* DCMediaPlayer.h */,
 				DFF339B31361EF74009C1C21 /* DCMediaPlayer.m */,
+				DF10EFB7138CC3000052F226 /* DCAudioProducer.h */,
+				DF10EFB8138CC3000052F226 /* DCAudioProducer.m */,
 				DFCFFD4D1389F94000000840 /* DCFileProducer.h */,
 				DFCFFD4E1389F94000000840 /* DCFileProducer.m */,
 				DF421DA21387182A00D18ADA /* DCMediaExporter.h */,
@@ -345,6 +350,7 @@
 				DFCFFD59138A1C1800000840 /* DCAudioEffect.m in Sources */,
 				DFCFFD5E138A1EF200000840 /* DCAudioEffectLowPassFilter.m in Sources */,
 				DFCFFD61138A23FD00000840 /* DCAudioEffectMeter.m in Sources */,
+				DF10EFB9138CC3000052F226 /* DCAudioProducer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

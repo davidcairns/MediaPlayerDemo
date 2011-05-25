@@ -9,15 +9,13 @@
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioToolbox.h>
 #import "DCAudioEffect.h"
+#import "DCAudioProducer.h"
 
 @interface DCMediaPlayer : NSObject {
-	BOOL _isPlaying;
-	
-	BOOL _isInitialized;
 	AudioUnit _remoteIOUnit;
 }
 
-@property(nonatomic, retain)NSURL *mediaURL;
+@property(nonatomic, retain)DCAudioProducer *audioProducer;
 
 - (void)play;
 - (void)stop;
