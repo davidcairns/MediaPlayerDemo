@@ -9,9 +9,9 @@
 #import "DCFileProducer.h"
 #import "DCRingBufferRecord.h"
 
-#define kRingBufferLength (1 << 20) // 1M
-#define kScratchBufferLength (64 << 10) // 64K
-#define kLowWatermark (16 << 10) // 16K
+#define kRingBufferLength (16 << 10) // 16K
+#define kScratchBufferLength (8 << 10) // 8K
+#define kLowWatermark (4 << 10) // 4K
 
 @interface DCFileProducer ()
 @property(nonatomic, retain)NSURL *mediaURL;
